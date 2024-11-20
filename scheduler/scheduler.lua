@@ -23,8 +23,7 @@ local valid_intervals = {
 
 --- @class Scheduler
 --- @field cyclic boolean
---- @field entries table
---- @field ctx { station: number, condition: number }
+--- @field entries { [integer]: table, ctx: { station: number, condition: number } }
 local Scheduler = {}
 
 --- A utility helper to make code more readable.
@@ -63,7 +62,7 @@ Scheduler.any = "minecraft:air"
 function Scheduler.new(data)
 	expect(1, data, "boolean", "table")
 	local initial = type(data) == "boolean" and { cyclic = data, entries = {} } or data --[[@as table]]
-	initial.ctx = initial.ctx or { station = 0, condition = 0 }
+	initial.entries.ctx = initial.entries.ctx or { station = 0, condition = 0 }
 	return setmetatable(initial, { __index = Scheduler })
 end
 
@@ -73,9 +72,9 @@ end
 function Scheduler:entry(id, data)
 	expect(1, id, "string")
 	expect(2, data, "table")
-	self.ctx.station = self.ctx.station + 1
-	self.ctx.condition = 1
-	self.entries[self.ctx.station] = {
+	self.entries.ctx.station = self.entries.ctx.station + 1
+	self.entries.ctx.condition = 1
+	self.entries[self.entries.ctx.station] = {
 		instruction = { id = id, data = data },
 		conditions = {}
 	}
@@ -88,15 +87,15 @@ end
 function Scheduler:condition(id, data)
 	expect(1, id, "string")
 	expect(2, data, "table")
-	local conds = self.entries[self.ctx.station].conditions
-	conds[self.ctx.condition] = conds[self.ctx.condition] or {}
-	table.insert(conds[self.ctx.condition], { id = id, data = data })
+	local conds = self.entries[self.entries.ctx.station].conditions
+	conds[self.entries.ctx.condition] = conds[self.entries.ctx.condition] or {}
+	table.insert(conds[self.entries.ctx.condition], { id = id, data = data })
 	return self
 end
 
 --- Set the stage for an OR (alternative) condition.
 function Scheduler:OR()
-	self.ctx.condition = self.ctx.condition + 1
+	self.entries.ctx.condition = self.entries.ctx.condition + 1
 	return self
 end
 
